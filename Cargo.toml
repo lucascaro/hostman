@@ -1,0 +1,10 @@
+[package]
+name = "hostman"
+version = "0.1.0"
+authors = ["Lucas Caro <lucascaro@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+clap = "2.32.0"
+structopt = "0.2.14"
+regex = "1.1.0"
