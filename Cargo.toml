@@ -3,6 +3,8 @@ name = "hostman"
 version = "0.1.0"
 authors = ["Lucas Caro <lucascaro@gmail.com>"]
 edition = "2018"
+description = "A cli manager for /etc/hosts"
+license = "MIT"
 
 [dependencies]
 clap = "2.32.0"
