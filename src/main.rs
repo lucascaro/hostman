@@ -1,19 +1,22 @@
+extern crate parse_hosts;
 extern crate regex;
+
 use structopt::StructOpt;
 mod commands;
+mod hostsfile;
 
 #[derive(Debug, StructOpt)]
 #[structopt(raw(setting = "structopt::clap::AppSettings::ColoredHelp"))]
 /// Manage /etc/hosts
 pub enum Cli {
-    #[structopt(name = "show")]
+    #[structopt(name = "show", alias = "s")]
     #[structopt(raw(setting = "structopt::clap::AppSettings::ColoredHelp"))]
-    /// Show current configuration.
+    /// Show current configuration (alias: s).
     Show {},
 
-    #[structopt(name = "add")]
+    #[structopt(name = "add", alias = "a")]
     #[structopt(raw(setting = "structopt::clap::AppSettings::ColoredHelp"))]
-    /// Add host to /etc/hosts.
+    /// Add host to /etc/hosts (alias: a).
     Add {
         // command
         ip: String,
@@ -36,9 +39,9 @@ pub enum Cli {
     /// Enable previously disabled host (alias: en).
     Enable { host: String },
 
-    #[structopt(name = "check")]
+    #[structopt(name = "check", alias = "c")]
     #[structopt(raw(setting = "structopt::clap::AppSettings::ColoredHelp"))]
-    /// (or rm) Remove host from /etc/hosts.
+    /// Check whether host is in hosts file (alias: c).
     Check {
         host: String,
         #[structopt(long = "exact", short = "e")]
@@ -50,12 +53,14 @@ pub enum Cli {
 
 fn main() {
     let args = Cli::from_args();
-    println!("{:?}", args);
 
     match args {
-        Cli::Show {} => commands::show::run(),
-        Cli::Check { host, exact } => commands::check::run(&host, exact),
-        Cli::Add { ip, names, comment } => commands::add::run(&ip, &names, &comment.join(" ")),
-        _ => println!("Not implemented"),
+        Cli::Show {} => commands::show(),
+        Cli::Check { host, exact } => commands::check(&host, exact),
+        Cli::Add { ip, names, comment } => commands::add(&ip, &names, &comment.join(" ")),
+        Cli::Remove { host } => commands::remove(&host),
+        Cli::Disable { host } => commands::disable(&host),
+        Cli::Enable { host } => commands::enable(&host),
+        // _ => println!("Not implemented"),
     }
 }
