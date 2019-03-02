@@ -71,7 +71,7 @@ dependencies = [
 
 [[package]]
 name = "hostman"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "clap 2.32.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "parse-hosts 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
