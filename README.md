@@ -1,5 +1,9 @@
 # Hostman
 
+[![Build Status](https://travis-ci.com/lucascaro/hostman.svg?branch=master)](https://travis-ci.com/lucascaro/hostman)
+
+[![Crates.io](https://img.shields.io/crates/v/hostman.svg)](https://crates.io/crates/hostman)
+
 Hostman is a command line manager for `/etc/hosts`.
 
 ## Installation
@@ -7,7 +11,7 @@ Hostman is a command line manager for `/etc/hosts`.
 ### using `cargo`
 
 ```shell
-$ cargo install hostman
+cargo install hostman
 ```
 
 ### Manual install
@@ -19,7 +23,7 @@ Download the [latest release for your architecture from github](https://github.c
 You can use the [trust install script](https://github.com/japaric/trust) to install this tool:
 
 ```shell
-$ curl -LSfs https://japaric.github.io/trust/install.sh | \
+curl -LSfs https://japaric.github.io/trust/install.sh | \
     sh -s -- --git lucascaro/hostman
 ```
 
@@ -28,7 +32,7 @@ $ curl -LSfs https://japaric.github.io/trust/install.sh | \
 Run the tool to get a usage summary:
 
 ```shell
-$ hostman
+hostman
 ```
 
 ### `hostman show`
@@ -51,7 +55,7 @@ $ hostman check localhost
 Add a new host to your hosts file.
 
 ```shell
-$ hostman add <ip> <names> [comment]...
+hostman add <ip> <names> [comment]...
 ```
 
 ### `hostman remove`
@@ -59,7 +63,7 @@ $ hostman add <ip> <names> [comment]...
 Remove a host from your hosts file.
 
 ```shell
-$ hostman remove <host>
+hostman remove <host>
 ```
 
 ### `hostman disable`
@@ -67,7 +71,7 @@ $ hostman remove <host>
 Disable (comment out) a host from your hosts file.
 
 ```shell
-$ hostman disable <host>
+hostman disable <host>
 ```
 
 ### `hostman enable`
@@ -75,5 +79,5 @@ $ hostman disable <host>
 Enable a commented out host from your hosts file.
 
 ```shell
-$ hostman enable <host>
+hostman enable <host>
 ```
