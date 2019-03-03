@@ -102,6 +102,18 @@ impl<'a> ManagedHostsFile<'a> {
     }
   }
 
+  pub fn without_comments(&self) -> Vec<String> {
+    self
+      .lines
+      .iter()
+      .filter(|l| match l.data() {
+        Some(_) => true,
+        None => false,
+      })
+      .map(|l| format!("{}", l))
+      .collect::<Vec<String>>()
+  }
+
   pub fn save(&self) {
     let file_content = format!("{}", self);
     write_hosts(&file_content);

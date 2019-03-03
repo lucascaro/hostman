@@ -12,7 +12,10 @@ pub enum Cli {
     #[structopt(name = "show", alias = "s")]
     #[structopt(raw(setting = "structopt::clap::AppSettings::ColoredHelp"))]
     /// Show current configuration (alias: s).
-    Show {},
+    Show {
+        #[structopt(long = "summary", short = "s")]
+        summary: bool,
+    },
 
     #[structopt(name = "add", alias = "a")]
     #[structopt(raw(setting = "structopt::clap::AppSettings::ColoredHelp"))]
@@ -55,7 +58,7 @@ fn main() {
     let args = Cli::from_args();
 
     match args {
-        Cli::Show {} => commands::show(),
+        Cli::Show { summary } => commands::show(summary),
         Cli::Check { host, exact } => commands::check(&host, exact),
         Cli::Add { ip, names, comment } => commands::add(&ip, &names, &comment.join(" ")),
         Cli::Remove { host } => commands::remove(&host),

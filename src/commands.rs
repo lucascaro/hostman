@@ -1,8 +1,11 @@
 use crate::hostsfile::MatchType;
 
-pub fn show() {
+pub fn show(summary: bool) {
   let hosts_file = crate::hostsfile::ManagedHostsFile::must_load();
-  println!("{}", hosts_file);
+  match summary {
+    false => println!("{}", hosts_file),
+    true => println!("{}", hosts_file.without_comments().join("\n")),
+  }
 }
 
 pub fn check(host: &str, exact: bool) {
