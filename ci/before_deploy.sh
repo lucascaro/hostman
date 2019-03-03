@@ -9,19 +9,24 @@ main() {
     case $TRAVIS_OS_NAME in
         linux)
             stage=$(mktemp -d)
+            program=hostman
             ;;
         osx)
             stage=$(mktemp -d -t tmp)
+            program=hostman
+            ;;
+        windows)
+            program=hostman.exe
             ;;
     esac
 
     test -f Cargo.lock || cargo generate-lockfile
 
     # TODO Update this to build the artifacts that matter to you
-    cross rustc --bin hostman --target $TARGET --release -- -C lto
+    cross rustc --bin $program --target $TARGET --release -- -C lto
 
     # TODO Update this to package the right artifacts
-    cp target/$TARGET/release/hostman $stage/
+    cp target/$TARGET/release/$program $stage/
 
     cd $stage
     tar czf $src/$CRATE_NAME-$TRAVIS_TAG-$TARGET.tar.gz *
