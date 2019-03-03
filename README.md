@@ -1,7 +1,6 @@
 # Hostman
 
 [![Build Status](https://travis-ci.com/lucascaro/hostman.svg?branch=master)](https://travis-ci.com/lucascaro/hostman)
-
 [![Crates.io](https://img.shields.io/crates/v/hostman.svg)](https://crates.io/crates/hostman)
 
 Hostman is a command line manager for `/etc/hosts`.
