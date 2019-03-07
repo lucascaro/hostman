@@ -1,3 +1,5 @@
+#[macro_use]
+extern crate self_update;
 extern crate parse_hosts;
 extern crate regex;
 
@@ -50,6 +52,10 @@ pub enum Cli {
         #[structopt(long = "exact", short = "e")]
         exact: bool,
     },
+
+    #[structopt(name = "update", alias = "up")]
+    /// Update hostman.
+    Update {},
 }
 
 // use quicli::prelude::*;
@@ -64,6 +70,7 @@ fn main() {
         Cli::Remove { host } => commands::remove(&host),
         Cli::Disable { host } => commands::disable(&host),
         Cli::Enable { host } => commands::enable(&host),
+        Cli::Update {} => commands::update(),
         // _ => println!("Not implemented"),
     }
 }

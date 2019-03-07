@@ -79,3 +79,20 @@ pub fn enable(host: &str) {
   hosts_file.enable_host(host);
   hosts_file.save();
 }
+
+pub fn update() {
+  let target = self_update::get_target().expect("Error getting self-update target");
+  let status = self_update::backends::github::Update::configure()
+    .expect("error configuring backend")
+    .repo_owner("lucascaro")
+    .repo_name("hostman")
+    .target(&target)
+    .bin_name("hostman")
+    .show_download_progress(true)
+    .current_version(cargo_crate_version!())
+    .build()
+    .expect("cannot build")
+    .update()
+    .expect("cannot update");
+  println!("Update status: `{}`!", status.version());
+}
