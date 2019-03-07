@@ -80,3 +80,11 @@ Enable a commented out host from your hosts file.
 ```shell
 hostman enable <host>
 ```
+
+### `hostman update`
+
+Update the cli to the latest version.
+
+```shell
+hostman update
+```
