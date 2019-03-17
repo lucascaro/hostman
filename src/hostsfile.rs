@@ -255,4 +255,38 @@ mod tests {
         assert!(hf.contents() == before);
     }
 
+    #[test]
+    fn disable_host() {
+        let contents = "# hosts file\n127.0.0.1 localhost\n127.0.0.2 test1.test test2.test\n# 127.0.0.1 localhost \n# 127.0.0.2 test3.test";
+        let mut hf = ManagedHostsFile::from_string(contents, "test");
+
+        hf.disable_host("test1.test");
+        assert!(!hf.has_host("test1.test"));
+        assert!(hf.has_disabled_host("test1.test"));
+        assert!(!hf.has_host("test2.test"));
+        assert!(hf.has_disabled_host("test2.test"));
+    }
+
+    #[test]
+    fn enable_host() {
+        let contents = "# hosts file\n127.0.0.1 localhost\n127.0.0.2 test1.test test2.test\n# 127.0.0.1 localhost \n# 127.0.0.2 test3.test";
+        let mut hf = ManagedHostsFile::from_string(contents, "test");
+
+        hf.disable_host("test1.test");
+        hf.enable_host("test2.test");
+        assert!(hf.has_host("test1.test"));
+        assert!(!hf.has_disabled_host("test1.test"));
+        assert!(hf.has_host("test2.test"));
+        assert!(!hf.has_disabled_host("test2.test"));
+    }
+
+    #[test]
+    fn without_comments() {
+        let contents = "# hosts file\n127.0.0.1 localhost\n127.0.0.2 test1.test test2.test\n# 127.0.0.1 localhost \n# 127.0.0.2 test3.test";
+        let hf = ManagedHostsFile::from_string(contents, "test");
+
+        let woc = hf.without_comments().join("\n");
+        assert!(woc == "127.0.0.1  localhost\n127.0.0.2  test1.test test2.test");
+    }
+
 }
