@@ -57,6 +57,14 @@ Add a new host to your hosts file.
 hostman add <ip> <names> [comment]...
 ```
 
+### `hostman local`
+
+Add a new host to your hosts file, using 127.0.0.1 as the ip.
+
+```shell
+hostman local <names> [comment]...
+```
+
 ### `hostman remove`
 
 Remove a host from your hosts file.
