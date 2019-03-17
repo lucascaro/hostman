@@ -147,3 +147,112 @@ impl<'a> fmt::Display for ManagedHostsFile<'a> {
         write!(f, "{}\n", lines.join("\n"))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn load_from_string() {
+        let contents = "# hosts file\n127.0.0.1  localhost\n";
+        let hf = ManagedHostsFile::from_string(contents, "test");
+        assert!(hf.file_name == "test");
+        assert!(hf.contents() == contents);
+    }
+
+    #[test]
+    fn get_matches() {
+        // let contents = "# hosts file\n127.0.0.1  localhost\n127.0.0.2 test1.test test2.test\n# 127.0.0.1 localhost \n# 127.0.0.2 test3.test";
+        let contents = "# hosts file\n127.0.0.1  localhost\n127.0.0.2 test1.test test2.test\n";
+        let hf = ManagedHostsFile::from_string(contents, "test");
+
+        let missing = hf.get_matches("missing", &MatchType::Exact);
+        assert!(missing.is_empty());
+
+        let missing = hf.get_matches("missing", &MatchType::Partial);
+        assert!(missing.is_empty());
+
+        let localhost = hf.get_matches("localhost", &MatchType::Exact);
+        assert!(localhost.len() == 1);
+        assert!(localhost[0] == "127.0.0.1  localhost");
+
+        let test_matches = hf.get_matches("test", &MatchType::Partial);
+        assert!(test_matches.len() == 1);
+        assert!(test_matches[0] == "127.0.0.2  test1.test test2.test");
+    }
+
+    #[test]
+    fn get_multi_match() {
+        // let contents = "# hosts file\n127.0.0.1  localhost\n127.0.0.2 test1.test test2.test\n# 127.0.0.1 localhost \n# 127.0.0.2 test3.test";
+        let contents = "# hosts file\n127.0.0.1  localhost\n127.0.0.2 test1.test test2.test\n";
+        let hf = ManagedHostsFile::from_string(contents, "test");
+
+        let missing = hf.get_multi_match(&["missing"], &MatchType::Exact);
+        assert!(missing.is_empty());
+
+        let localhost = hf.get_multi_match(&["localhost"], &MatchType::Exact);
+        assert!(localhost.len() == 1);
+        assert!(localhost[0] == "localhost");
+
+        let test_matches = hf.get_multi_match(
+            &["test1.test", "test2.test", "localhost"],
+            &MatchType::Exact,
+        );
+        assert!(test_matches == ["test1.test", "test2.test", "localhost"]);
+
+        let test_matches = hf.get_multi_match(&["test"], &MatchType::Partial);
+        assert!(test_matches == ["test"]);
+    }
+
+    #[test]
+    fn has_host() {
+        let contents = "# hosts file\n127.0.0.1  localhost\n127.0.0.2 test1.test test2.test\n# 127.0.0.1 localhost \n# 127.0.0.2 test3.test";
+        let hf = ManagedHostsFile::from_string(contents, "test");
+
+        assert!(hf.has_host("localhost"));
+        assert!(!hf.has_host("localhost2"));
+        assert!(hf.has_host("test1.test"));
+        assert!(hf.has_host("test2.test"));
+        assert!(!hf.has_host("test3.test"));
+    }
+
+    #[test]
+    fn has_disabled_host() {
+        let contents = "# hosts file\n127.0.0.1  localhost\n127.0.0.2 test1.test test2.test\n# 127.0.0.1 localhost \n# 127.0.0.2 test3.test";
+        let hf = ManagedHostsFile::from_string(contents, "test");
+
+        assert!(hf.has_disabled_host("localhost"));
+        assert!(!hf.has_disabled_host("localhost2"));
+        assert!(!hf.has_disabled_host("test1.test"));
+        assert!(!hf.has_disabled_host("test2.test"));
+        assert!(hf.has_disabled_host("test3.test"));
+    }
+
+    #[test]
+    fn add_line() {
+        let contents = "# hosts file\n127.0.0.1 localhost\n127.0.0.2 test1.test test2.test\n# 127.0.0.1 localhost \n# 127.0.0.2 test3.test";
+        let mut hf = ManagedHostsFile::from_string(contents, "test");
+
+        let before = hf.contents();
+        let new_line = "127.0.0.4  test4.test";
+        hf.add_line(new_line);
+        assert!(hf.has_host("test4.test"));
+        let glued = format!("{}{}\n", before, new_line);
+        assert!(hf.contents() == glued);
+    }
+
+    #[test]
+    fn remove_host() {
+        let contents = "# hosts file\n127.0.0.1 localhost\n127.0.0.2 test1.test test2.test\n# 127.0.0.1 localhost \n# 127.0.0.2 test3.test";
+        let mut hf = ManagedHostsFile::from_string(contents, "test");
+
+        let before = hf.contents();
+        let new_line = "127.0.0.4  test4.test";
+        hf.add_line(new_line);
+        assert!(hf.has_host("test4.test"));
+        hf.remove_host("test4.test");
+        assert!(!hf.has_host("test4.test"));
+        assert!(hf.contents() == before);
+    }
+
+}
