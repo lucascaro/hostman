@@ -1,8 +1,9 @@
 use parse_hosts::HostsFile;
-use regex::Regex;
 use std::fmt;
 
-const HOSTS_FILE: &str = "/etc/hosts";
+use crate::file_utils::*;
+
+const SYSTEM_HOSTS_FILE: &str = "/etc/hosts";
 // const HOSTS_FILE: &str = "./hosts";
 
 pub enum MatchType {
@@ -22,15 +23,25 @@ impl MatchType {
 
 pub struct ManagedHostsFile<'a> {
     lines: Vec<parse_hosts::Line<'a>>,
+    file_name: String,
 }
 
 impl<'a> ManagedHostsFile<'a> {
     pub fn load() -> Result<ManagedHostsFile<'a>, std::io::Error> {
-        let contents = read_hosts();
+        ManagedHostsFile::from_file(SYSTEM_HOSTS_FILE)
+    }
+
+    pub fn from_file(file_name: &str) -> Result<ManagedHostsFile<'a>, std::io::Error> {
+        let contents = read_hosts(file_name);
+        Ok(ManagedHostsFile::from_string(&contents, file_name))
+    }
+
+    pub fn from_string(contents: &str, file_name: &str) -> ManagedHostsFile<'a> {
         let hf = HostsFile::read_buffered(contents.as_bytes());
-        Ok(ManagedHostsFile {
+        ManagedHostsFile {
             lines: hf.lines().map(|l| l.unwrap()).collect(),
-        })
+            file_name: String::from(file_name),
+        }
     }
 
     pub fn must_load() -> ManagedHostsFile<'a> {
@@ -119,34 +130,13 @@ impl<'a> ManagedHostsFile<'a> {
             .collect::<Vec<String>>()
     }
 
+    pub fn contents(&self) -> String {
+        format!("{}", self)
+    }
+
     pub fn save(&self) {
-        let file_content = format!("{}", self);
-        write_hosts(&file_content);
-    }
-}
-
-fn exact_match(needle: &str, haystack: &str) -> bool {
-    let exact_matcher = Regex::new(format!(r"(^| ){}( |$)", needle).as_str()).unwrap();
-    exact_matcher.is_match(haystack)
-}
-
-fn read_hosts() -> String {
-    std::fs::read_to_string(HOSTS_FILE).expect("could not read file")
-}
-
-fn backup_hosts() {
-    let file_name = format!("{}.bak", HOSTS_FILE);
-    if std::fs::copy(HOSTS_FILE, &file_name).is_err() {
-        eprintln!("Error: cannot write to backup file: {}", file_name);
-        std::process::exit(1);
-    }
-}
-
-fn write_hosts(contents: &str) {
-    backup_hosts();
-    if std::fs::write(HOSTS_FILE, contents).is_err() {
-        eprintln!("Error: cannot write hosts file: {}", HOSTS_FILE);
-        std::process::exit(1);
+        let file_content = self.contents();
+        write_hosts(&self.file_name, &file_content);
     }
 }
 
