@@ -11,31 +11,30 @@ pub fn show(summary: bool) {
 
 pub fn check(host: &str, exact: bool) {
     let hosts_file = crate::hostsfile::ManagedHostsFile::must_load();
-    let found = hosts_file.get_matches(host, MatchType::from_bool(exact));
+    let found = hosts_file.get_matches(host, &MatchType::from_bool(exact));
     println!("{}", found.join("\n"));
 }
 
 pub fn add(ip: &str, names: &str, comment: &str) {
     let all_names = names.split(',').collect::<Vec<&str>>();
     let mut hosts_file = crate::hostsfile::ManagedHostsFile::must_load();
-    for name in &all_names {
-        let matches = hosts_file.get_matches(name, MatchType::Exact);
-        if !matches.is_empty() {
-            println!(
-                "The requested host is already present: \n{}",
-                matches.join("\n")
-            );
-            return;
-        }
+    let matches = hosts_file.get_multi_match(&all_names, &MatchType::Exact);
+    if !matches.is_empty() {
+        println!(
+            "The requested host is already present: \n{}",
+            matches.join("\n")
+        );
+        return;
     }
+
     let names = all_names.join(" ");
     println!("Adding {} {} to /etc/hosts", ip, names);
 
     let computed_comment = match comment {
-        "" => &names,
+        "" => "Added by hostman",
         _ => comment,
     };
-    let host_line = format!("{} {} #{}", ip, names, computed_comment);
+    let host_line = format!("{} {} # {}", ip, names, computed_comment);
     hosts_file.add_line(&host_line);
     hosts_file.save();
 }

@@ -37,7 +37,7 @@ impl<'a> ManagedHostsFile<'a> {
         ManagedHostsFile::load().unwrap()
     }
 
-    pub fn get_matches(&self, host: &str, exact: MatchType) -> Vec<String> {
+    pub fn get_matches(&self, host: &str, exact: &MatchType) -> Vec<String> {
         let lines: Vec<String> = self.lines.iter().map(|l| format!("{}", l)).collect();
         lines
             .into_iter()
@@ -45,6 +45,14 @@ impl<'a> ManagedHostsFile<'a> {
                 MatchType::Exact => exact_match(host, line),
                 MatchType::Partial => line.contains(host),
             })
+            .collect()
+    }
+
+    pub fn get_multi_match(&self, hosts: &[&str], exact: &MatchType) -> Vec<String> {
+        hosts
+            .iter()
+            .filter(|name| !self.get_matches(name, exact).is_empty())
+            .map(|s| String::from(*s))
             .collect()
     }
 
