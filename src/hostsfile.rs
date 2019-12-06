@@ -1,4 +1,5 @@
-use parse_hosts::HostsFile;
+use hosts_parser::HostsFile;
+use hosts_parser::HostsFileLine;
 use std::fmt;
 
 use crate::file_utils::*;
@@ -21,30 +22,31 @@ impl MatchType {
     }
 }
 
-pub struct ManagedHostsFile<'a> {
-    lines: Vec<parse_hosts::Line<'a>>,
+#[derive(Debug, PartialEq, Eq)]
+pub struct ManagedHostsFile {
+    lines: Vec<HostsFileLine>,
     file_name: String,
 }
 
-impl<'a> ManagedHostsFile<'a> {
-    pub fn load() -> Result<ManagedHostsFile<'a>, std::io::Error> {
+impl ManagedHostsFile {
+    pub fn load() -> Result<ManagedHostsFile, std::io::Error> {
         ManagedHostsFile::from_file(SYSTEM_HOSTS_FILE)
     }
 
-    pub fn from_file(file_name: &str) -> Result<ManagedHostsFile<'a>, std::io::Error> {
+    pub fn from_file(file_name: &str) -> Result<ManagedHostsFile, std::io::Error> {
         let contents = read_hosts(file_name);
         Ok(ManagedHostsFile::from_string(&contents, file_name))
     }
 
-    pub fn from_string(contents: &str, file_name: &str) -> ManagedHostsFile<'a> {
-        let hf = HostsFile::read_buffered(contents.as_bytes());
+    pub fn from_string(contents: &str, file_name: &str) -> ManagedHostsFile {
+        let hf: HostsFile = contents.parse().unwrap();
         ManagedHostsFile {
-            lines: hf.lines().map(|l| l.unwrap()).collect(),
+            lines: hf.lines,
             file_name: String::from(file_name),
         }
     }
 
-    pub fn must_load() -> ManagedHostsFile<'a> {
+    pub fn must_load() -> ManagedHostsFile {
         ManagedHostsFile::load().unwrap()
     }
 
@@ -68,7 +70,9 @@ impl<'a> ManagedHostsFile<'a> {
     }
 
     pub fn has_host(&self, host: &str) -> bool {
-        self.lines.iter().any(|l| l.hosts().any(|h| h == host))
+        self.lines
+            .iter()
+            .any(|l| l.hosts().iter().any(|h| h == host))
     }
 
     pub fn has_disabled_host(&self, host: &str) -> bool {
@@ -78,8 +82,9 @@ impl<'a> ManagedHostsFile<'a> {
         })
     }
 
-    pub fn add_line(&mut self, line: &'a str) {
-        let l = parse_hosts::Line::new(line).unwrap();
+    pub fn add_line(&mut self, line: &str) {
+        let l = HostsFileLine::from_string(line).unwrap();
+        println!("{} {}", line, l);
         self.lines.push(l);
     }
 
@@ -87,7 +92,7 @@ impl<'a> ManagedHostsFile<'a> {
         let index = self
             .lines
             .iter()
-            .position(|l| l.hosts().any(|h| h == host))
+            .position(|l| l.hosts().iter().any(|h| h == host))
             .unwrap();
         self.lines.remove(index);
     }
@@ -96,11 +101,11 @@ impl<'a> ManagedHostsFile<'a> {
         let position = self
             .lines
             .iter()
-            .position(|l: &parse_hosts::Line| l.hosts().any(|h| h == host));
+            .position(|l: &HostsFileLine| l.hosts().iter().any(|h| h == host));
 
         if let Some(index) = position {
-            let comment = format!("{}", self.lines[index]);
-            let new_line = parse_hosts::Line::from_comment(&comment).into_owned();
+            let comment = format!("#{}", self.lines[index]);
+            let new_line = HostsFileLine::from_comment(&comment);
             self.lines[index] = new_line;
         } else {
             println!("Error, line not found for {}", host)
@@ -115,7 +120,7 @@ impl<'a> ManagedHostsFile<'a> {
 
         if let Some(index) = position {
             let comment = self.lines[index].comment().unwrap();
-            let new_line = parse_hosts::Line::new(&comment).unwrap().into_owned();
+            let new_line = HostsFileLine::from_string(&comment[1..]).unwrap();
             self.lines[index] = new_line;
         } else {
             println!("Error, line not found for {}", host)
@@ -125,7 +130,7 @@ impl<'a> ManagedHostsFile<'a> {
     pub fn without_comments(&self) -> Vec<String> {
         self.lines
             .iter()
-            .filter(|l| l.data().is_some())
+            .filter(|l| l.has_host())
             .map(|l| format!("{}", l))
             .collect::<Vec<String>>()
     }
@@ -140,11 +145,11 @@ impl<'a> ManagedHostsFile<'a> {
     }
 }
 
-impl<'a> fmt::Display for ManagedHostsFile<'a> {
+impl<'a> fmt::Display for ManagedHostsFile {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let hf = &self.lines;
         let lines: Vec<String> = hf.iter().map(|l| format!("{}", l)).collect();
-        write!(f, "{}\n", lines.join("\n"))
+        writeln!(f, "{}", lines.join("\n"))
     }
 }
 
@@ -155,9 +160,10 @@ mod tests {
     #[test]
     fn load_from_string() {
         let contents = "# hosts file\n127.0.0.1  localhost\n";
+        let expected = "# hosts file\n127.0.0.1 localhost\n";
         let hf = ManagedHostsFile::from_string(contents, "test");
         assert!(hf.file_name == "test");
-        assert!(hf.contents() == contents);
+        assert_eq!(hf.contents(), expected);
     }
 
     #[test]
@@ -174,11 +180,11 @@ mod tests {
 
         let localhost = hf.get_matches("localhost", &MatchType::Exact);
         assert!(localhost.len() == 1);
-        assert!(localhost[0] == "127.0.0.1  localhost");
+        assert_eq!(localhost[0], "127.0.0.1 localhost");
 
         let test_matches = hf.get_matches("test", &MatchType::Partial);
-        assert!(test_matches.len() == 1);
-        assert!(test_matches[0] == "127.0.0.2  test1.test test2.test");
+        assert_eq!(test_matches.len(), 1);
+        assert_eq!(test_matches[0], "127.0.0.2 test1.test test2.test");
     }
 
     #[test]
@@ -234,11 +240,24 @@ mod tests {
         let mut hf = ManagedHostsFile::from_string(contents, "test");
 
         let before = hf.contents();
-        let new_line = "127.0.0.4  test4.test";
+        let new_line = "127.0.0.4 test4.test";
         hf.add_line(new_line);
         assert!(hf.has_host("test4.test"));
         let glued = format!("{}{}\n", before, new_line);
-        assert!(hf.contents() == glued);
+        assert_eq!(hf.contents(), glued);
+    }
+
+    #[test]
+    fn add_line_with_comment() {
+        let contents = "# hosts file\n127.0.0.1 localhost\n127.0.0.2 test1.test test2.test\n# 127.0.0.1 localhost \n# 127.0.0.2 test3.test";
+        let mut hf = ManagedHostsFile::from_string(contents, "test");
+
+        let before = hf.contents();
+        let new_line = "127.0.0.4 test4.test # some comment";
+        hf.add_line(new_line);
+        assert!(hf.has_host("test4.test"));
+        let glued = format!("{}{}\n", before, new_line);
+        assert_eq!(hf.contents(), glued);
     }
 
     #[test]
@@ -286,7 +305,6 @@ mod tests {
         let hf = ManagedHostsFile::from_string(contents, "test");
 
         let woc = hf.without_comments().join("\n");
-        assert!(woc == "127.0.0.1  localhost\n127.0.0.2  test1.test test2.test");
+        assert_eq!(woc, "127.0.0.1 localhost\n127.0.0.2 test1.test test2.test");
     }
-
 }

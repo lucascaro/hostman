@@ -18,21 +18,23 @@ pub fn check(host: &str, exact: bool) {
 
 // pub fn add(ip: &str, names: &str, comment: &str) {
 pub fn add(args: &Cli, sub_cmd: &CmdAdd) {
-    let CmdAdd { names, ip, comment } = sub_cmd;
+    let CmdAdd {
+        names,
+        ip,
+        comment,
+        update,
+    } = sub_cmd;
     let all_names = names.split(',').collect::<Vec<&str>>();
     let mut hosts_file = ManagedHostsFile::must_load();
     let matches = hosts_file.get_multi_match(&all_names, &MatchType::Exact);
-    if !matches.is_empty() {
+    if !matches.is_empty() && !update {
         println!(
             "The requested host is already present: \n{}",
             matches.join("\n")
         );
         return;
     }
-
     let names = all_names.join(" ");
-    println!("Adding {} {} to /etc/hosts", ip, names);
-
     let comment = comment.join(" ");
     let computed_comment = if comment.is_empty() {
         "Added by hostman"
@@ -40,6 +42,22 @@ pub fn add(args: &Cli, sub_cmd: &CmdAdd) {
         &comment
     };
     let host_line = format!("{} {} # {}", ip, names, computed_comment);
+    if !matches.is_empty() {
+        println!(
+            "Updating host in hosts file: \n {} \n => {} {} {}",
+            matches.join("\n"),
+            ip,
+            names,
+            comment
+        );
+        for host in all_names {
+            println!("Removing host {}", host);
+            hosts_file.remove_host(host);
+        }
+    }
+
+    println!("Adding {} {} to /etc/hosts", ip, names);
+    println!("{}", host_line);
     hosts_file.add_line(&host_line);
     maybe_save(args.dry_run, hosts_file);
 }
@@ -51,6 +69,7 @@ pub fn add_local(args: &Cli, sub_cmd: &CmdAddLocal) {
             ip: String::from("127.0.0.1"),
             names: String::from(sub_cmd.names.as_str()),
             comment: sub_cmd.comment.clone(),
+            update: sub_cmd.update,
         },
     )
 }

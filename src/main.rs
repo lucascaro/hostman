@@ -1,6 +1,8 @@
 #[macro_use]
 extern crate self_update;
-extern crate parse_hosts;
+// #[macro_use]
+// extern crate nom;
+extern crate hosts_parser;
 extern crate regex;
 
 use structopt::StructOpt;
@@ -9,6 +11,7 @@ use cli::{Cli, CliCmd};
 mod commands;
 mod file_utils;
 mod hostsfile;
+// mod nom_hosts;
 
 fn main() {
     let args = Cli::from_args();

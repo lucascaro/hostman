@@ -61,15 +61,24 @@ pub enum CliCmd {
 
 #[derive(Debug, StructOpt)]
 pub struct CmdAddLocal {
-  // command
+  /// Update host if it already exists in the hosts file
+  #[structopt(long = "update", short = "u")]
+  pub update: bool,
+  /// Host names to add, comma separated
   pub names: String,
+  /// Optional comment
   pub comment: Vec<String>,
 }
 
 #[derive(Debug, StructOpt)]
 pub struct CmdAdd {
-  // command
+  /// Update host if it already exists in the hosts file
+  #[structopt(long = "update", short = "u")]
+  pub update: bool,
+  /// IP Address of the line to add
   pub ip: String,
+  /// Host names to add, comma separated
   pub names: String,
+  /// Optional comment
   pub comment: Vec<String>,
 }
