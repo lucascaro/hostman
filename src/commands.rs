@@ -116,9 +116,8 @@ pub fn enable(args: &Cli, host: &str) {
 }
 
 pub fn update() {
-    let target = self_update::get_target().expect("Error getting self-update target");
+    let target = self_update::get_target();
     let status = self_update::backends::github::Update::configure()
-        .expect("error configuring backend")
         .repo_owner("lucascaro")
         .repo_name("hostman")
         .target(&target)
