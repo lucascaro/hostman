@@ -1,6 +1,6 @@
 [package]
 name = "hostman"
-version = "0.5.1"
+version = "0.5.2"
 authors = ["Lucas Caro <lucascaro@gmail.com>"]
 edition = "2018"
 description = "A cli manager for /etc/hosts"
