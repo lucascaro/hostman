@@ -1,19 +1,56 @@
 use crate::cli::*;
 use crate::hostsfile::{ManagedHostsFile, MatchType};
+use colored::*;
+use hosts_parser::HostsFileLine;
 
 pub fn show(summary: bool) {
     let hosts_file = ManagedHostsFile::must_load();
     if summary {
         println!("{}", hosts_file);
     } else {
-        println!("{}", hosts_file.without_comments().join("\n"));
+        println!(
+            "{}",
+            hosts_file
+                .without_comments()
+                .iter()
+                .map(|l| format_line(l))
+                .collect::<Vec<String>>()
+                .join("\n")
+        );
+    }
+}
+fn format_line(l: &HostsFileLine) -> String {
+    if l.has_host() && l.has_comment() {
+        format!(
+            "{} {} {} {}",
+            l.ip().unwrap().as_str().blue(),
+            l.hosts().first().unwrap().as_str().green(),
+            (&l.hosts()[1..]).join(" ").as_str().yellow(),
+            l.comment().unwrap().cyan()
+        )
+    } else if l.has_host() {
+        format!(
+            "{} {} {}",
+            l.ip().unwrap().as_str().blue(),
+            l.hosts().first().unwrap().as_str().green(),
+            (&l.hosts()[1..]).join(" ").as_str().yellow(),
+        )
+    } else {
+        format!("{}", l.comment().unwrap().as_str().cyan())
     }
 }
 
 pub fn check(host: &str, exact: bool) {
     let hosts_file = ManagedHostsFile::must_load();
     let found = hosts_file.get_matches(host, &MatchType::from_bool(exact));
-    println!("{}", found.join("\n"));
+    println!(
+        "{}",
+        found
+            .iter()
+            .map(|l| format_line(l))
+            .collect::<Vec<String>>()
+            .join("\n")
+    );
 }
 
 // pub fn add(ip: &str, names: &str, comment: &str) {

@@ -1,8 +1,7 @@
+use crate::file_utils::*;
 use hosts_parser::HostsFile;
 use hosts_parser::HostsFileLine;
 use std::fmt;
-
-use crate::file_utils::*;
 
 const SYSTEM_HOSTS_FILE: &str = "/etc/hosts";
 // const HOSTS_FILE: &str = "./hosts";
@@ -50,13 +49,12 @@ impl ManagedHostsFile {
         ManagedHostsFile::load().unwrap()
     }
 
-    pub fn get_matches(&self, host: &str, exact: &MatchType) -> Vec<String> {
-        let lines: Vec<String> = self.lines.iter().map(|l| format!("{}", l)).collect();
-        lines
-            .into_iter()
+    pub fn get_matches(&self, host: &str, exact: &MatchType) -> Vec<&HostsFileLine> {
+        self.lines
+            .iter()
             .filter(|line| match exact {
-                MatchType::Exact => exact_match(host, line),
-                MatchType::Partial => line.contains(host),
+                MatchType::Exact => exact_match(host, format!("{}", line).as_str()),
+                MatchType::Partial => format!("{}", line).contains(host),
             })
             .collect()
     }
@@ -127,12 +125,12 @@ impl ManagedHostsFile {
         }
     }
 
-    pub fn without_comments(&self) -> Vec<String> {
+    pub fn without_comments(&self) -> Vec<&HostsFileLine> {
         self.lines
             .iter()
             .filter(|l| l.has_host())
-            .map(|l| format!("{}", l))
-            .collect::<Vec<String>>()
+            .map(|l| l)
+            .collect::<Vec<&HostsFileLine>>()
     }
 
     pub fn contents(&self) -> String {
@@ -180,11 +178,14 @@ mod tests {
 
         let localhost = hf.get_matches("localhost", &MatchType::Exact);
         assert!(localhost.len() == 1);
-        assert_eq!(localhost[0], "127.0.0.1 localhost");
+        assert_eq!(format!("{}", localhost[0]), "127.0.0.1 localhost");
 
         let test_matches = hf.get_matches("test", &MatchType::Partial);
         assert_eq!(test_matches.len(), 1);
-        assert_eq!(test_matches[0], "127.0.0.2 test1.test test2.test");
+        assert_eq!(
+            format!("{}", test_matches[0]),
+            "127.0.0.2 test1.test test2.test"
+        );
     }
 
     #[test]
@@ -304,7 +305,12 @@ mod tests {
         let contents = "# hosts file\n127.0.0.1 localhost\n127.0.0.2 test1.test test2.test\n# 127.0.0.1 localhost \n# 127.0.0.2 test3.test";
         let hf = ManagedHostsFile::from_string(contents, "test");
 
-        let woc = hf.without_comments().join("\n");
+        let woc = hf
+            .without_comments()
+            .iter()
+            .map(|l| format!("{}", l))
+            .collect::<Vec<String>>()
+            .join("\n");
         assert_eq!(woc, "127.0.0.1 localhost\n127.0.0.2 test1.test test2.test");
     }
 }

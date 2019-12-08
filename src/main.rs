@@ -1,9 +1,7 @@
 #[macro_use]
 extern crate self_update;
-// #[macro_use]
-// extern crate nom;
 extern crate hosts_parser;
-extern crate regex;
+extern crate regex; // not needed in Rust 2018
 
 use structopt::StructOpt;
 mod cli;
