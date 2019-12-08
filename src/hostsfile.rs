@@ -82,7 +82,6 @@ impl ManagedHostsFile {
 
     pub fn add_line(&mut self, line: &str) {
         let l = HostsFileLine::from_string(line).unwrap();
-        println!("{} {}", line, l);
         self.lines.push(l);
     }
 

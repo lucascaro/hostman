@@ -94,9 +94,14 @@ pub fn add(args: &Cli, sub_cmd: &CmdAdd) {
     }
 
     println!("Adding {} {} to /etc/hosts", ip, names);
-    println!("{}", host_line);
-    hosts_file.add_line(&host_line);
-    maybe_save(args.dry_run, hosts_file);
+    let line = HostsFileLine::from_string(&host_line);
+    if let Ok(line) = line {
+        println!("{}", format_line(&line));
+        hosts_file.add_line(&host_line);
+        maybe_save(args.dry_run, hosts_file);
+    } else {
+        println!("Error parsing line: {}", host_line);
+    }
 }
 
 pub fn add_local(args: &Cli, sub_cmd: &CmdAddLocal) {
